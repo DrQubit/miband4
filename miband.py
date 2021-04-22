@@ -211,7 +211,7 @@ class miband(Peripheral):
 
     def _send_key(self):
         self._log.info("Sending Key...")
-        self._char_auth.write(self._send_my_key)
+        self._char_auth.write(self.authKey)
         self.waitForNotifications(self.timeout)
 
     def _auth_notif(self, enabled):
