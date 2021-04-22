@@ -146,7 +146,7 @@ class miband(Peripheral):
 
 
         self._log.info('Connecting to ' + mac_address)
-        Peripheral.__init__(self, mac_address, addrType=ADDR_TYPE_PUBLIC)
+        Peripheral.__init__(self, mac_address, addrType=ADDR_TYPE_RANDOM)
         self._log.info('Connected')
         if not key:
             self.setSecurityLevel(level = "medium")
