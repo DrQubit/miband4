@@ -210,8 +210,8 @@ class miband(Peripheral):
             return struct.pack('<18s',b'\x01\x00'+ self.auth_key)
 
     def _send_key(self):
-        self._log.info("Sending Key...")
-        self._char_auth.write(self.authKey)
+        self._log.info("Sending Key "+self.auth_key.hex()+"...")
+        self._char_auth.write(self.auth_key)
         self.waitForNotifications(self.timeout)
 
     def _auth_notif(self, enabled):
