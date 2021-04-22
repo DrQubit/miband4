@@ -206,7 +206,7 @@ class miband(Peripheral):
         self._default_found_device = fallback
 
     def generateAuthKey(self):
-        if(self.authKey):
+        if(self.auth_key):
             return struct.pack('<18s',b'\x01\x00'+ self.auth_key)
 
     def _send_key(self):
