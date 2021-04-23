@@ -115,8 +115,8 @@ def get_heart_rate():
     input('Press a key to continue')
 
 
-def heart_logger(data):
-    print ('Realtime heart BPM:', data)
+def heart_logger(band, data):
+    print (band.mac_address, 'Realtime heart BPM:', data)
 
 
 # Needs Auth
