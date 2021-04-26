@@ -6,10 +6,18 @@ import struct
 from datetime import datetime, timedelta
 from Crypto.Cipher import AES
 from datetime import datetime
+
+#FORMAT = '%(asctime)-15s %(name)s (%(levelname)s) > %(message)s'
+#logging.basicConfig(filename='hrm.log', encoding='utf-8', level=logging.DEBUG, format=FORMAT)
+_log = logging.getLogger()
+_log.setLevel(logging.DEBUG)
+
+
+
 try:
     import zlib
 except ImportError:
-    print("zlib module not found. Updating watchface/firmware requires zlib")
+    _log.error("zlib module not found. Updating watchface/firmware requires zlib")
 try:
     from Queue import Queue, Empty
 except ImportError:
@@ -62,23 +70,23 @@ class Delegate(DefaultDelegate):
                 hour = struct.unpack("b", data[11:12])[0]
                 minute = struct.unpack("b", data[12:13])[0]
                 self.device.first_timestamp = datetime(year, month, day, hour, minute)
-                print("Fetch data from {}-{}-{} {}:{}".format(year, month, day, hour, minute))
+                _log.debug("Fetch data from {}-{}-{} {}:{}".format(year, month, day, hour, minute))
                 self.pkg = 0 #reset the packing index
                 self.device._char_fetch.write(b'\x02', False)
             elif data[:3] == b'\x10\x02\x01':
                 if self.device.last_timestamp > self.device.end_timestamp - timedelta(minutes=1):
-                    print("Finished fetching")
+                    _log.debug("Finished fetching")
                     return
-                print("Trigger more communication")
+                _log.debug("Trigger more communication")
                 time.sleep(1)
                 t = self.device.last_timestamp + timedelta(minutes=1)
                 self.device.start_get_previews_data(t)
 
             elif data[:3] == b'\x10\x02\x04':
-                print("No more activity fetch possible")
+                _log.debug("No more activity fetch possible")
                 return
             else:
-                print("Unexpected data on handle " + str(hnd) + ": " + str(data))
+                _log.error("Unexpected data on handle " + str(hnd) + ": " + str(data))
                 return
         elif hnd == self.device._char_activity.getHandle():
             if len(data) % 4 == 1:
@@ -138,11 +146,10 @@ class miband(Peripheral):
     _send_rnd_cmd = struct.pack('<2s', b'\x02\x00')
     _send_enc_key = struct.pack('<2s', b'\x03\x00')
     def __init__(self, mac_address,key=None, timeout=0.5, debug=False):
-        FORMAT = '%(asctime)-15s %(name)s (%(levelname)s) > %(message)s'
-        logging.basicConfig(format=FORMAT)
-        log_level = logging.WARNING if not debug else logging.DEBUG
+#        FORMAT = '%(asctime)-15s %(name)s (%(levelname)s) > %(message)s'
+#        logging.basicConfig(filename='hrm.log', encoding='utf-8', level=logging.DEBUG, format=FORMAT)
         self._log = logging.getLogger(self.__class__.__name__)
-        self._log.setLevel(log_level)
+        self._log.setLevel(logging.DEBUG)
 
 
         self._log.info('Connecting to ' + mac_address)
@@ -153,6 +160,7 @@ class miband(Peripheral):
         self.timeout = timeout
         self.mac_address = mac_address
         self.state = None
+        self.last_hr = -1
         self.heart_measure_callback = None
         self.heart_raw_callback = None
         self.accel_raw_callback = None
@@ -286,7 +294,10 @@ class miband(Peripheral):
                 res = self.queue.get(False)
                 _type = res[0]
                 if self.heart_measure_callback and _type == QUEUE_TYPES.HEART:
-                    self.heart_measure_callback(self, struct.unpack('bb', res[1])[1])
+                    current_hr=struct.unpack('bb', res[1])[1]
+                    if self.last_hr!=current_hr:
+                        self.heart_measure_callback(self, current_hr)
+                        self.last_hr=current_hr
                 elif self.heart_raw_callback and _type == QUEUE_TYPES.RAW_HEART:
                     self.heart_raw_callback(self._parse_raw_heart(res[1]))
                 elif self.accel_raw_callback and _type == QUEUE_TYPES.RAW_ACCEL:
@@ -445,7 +456,7 @@ class miband(Peripheral):
         char_d.write(b'\x00\x00', True)
 
     def dfuUpdate(self,fileName):
-        print('Update Watchface/Firmware')
+        _log.debug('Update Watchface/Firmware')
         svc = self.getServiceByUUID(UUIDS.SERVICE_DFU_FIRMWARE)
         char = svc.getCharacteristics(UUIDS.CHARACTERISTIC_DFU_FIRMWARE)[0]
         char_write = svc.getCharacteristics(UUIDS.CHARACTERISTIC_DFU_FIRMWARE_WRITE)[0]
@@ -458,7 +469,7 @@ class miband(Peripheral):
         crc=0xFFFF
         with open(fileName,"rb") as f:
             crc = zlib.crc32(f.read())
-        print('CRC32 Value is-->', crc)
+        _log.debug('CRC32 Value is-->', crc)
         # input('Press Enter to Continue')
         payload = b'\x01\x08'+struct.pack("<I",fileSize)[:-1]+b'\x00'+struct.pack("<I",crc)
         char.write(payload,withResponse=True)
@@ -468,7 +479,7 @@ class miband(Peripheral):
             while True:
                 c = f.read(20) #takes 20 bytes 
                 if not c:
-                    print ("Bytes written successfully. Wait till sync finishes")
+                    _log.debug ("Bytes written successfully. Wait till sync finishes")
                     break
                 char_write.write(c)
         # # after update is done send these values
@@ -479,7 +490,7 @@ class miband(Peripheral):
         if extension.lower() == "fw":
             self.waitForNotifications(0.5)
             char.write(b'\x05', withResponse=True)
-        print('Update Complete')
+        _log.debug('Update Complete')
         input('Press Enter to Continue')
 
     def get_heart_rate_one_time(self):
@@ -549,7 +560,7 @@ class miband(Peripheral):
         if not self.activity_notif_enabled:
             self._auth_previews_data_notif(True)
             self.waitForNotifications(0.1)
-        print("Trigger activity communication")
+        _log.debug("Trigger activity communication")
         year = struct.pack("<H", start_timestamp.year)
         month = struct.pack("b", start_timestamp.month)
         day = struct.pack("b", start_timestamp.day)
