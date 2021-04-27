@@ -150,7 +150,7 @@ class miband(Peripheral):
 #        logging.basicConfig(filename='hrm.log', encoding='utf-8', level=logging.DEBUG, format=FORMAT)
         self._log = logging.getLogger(self.__class__.__name__)
         self._log.setLevel(logging.DEBUG)
-
+        self.last_msg=0
 
         self._log.info('Connecting to ' + mac_address)
         Peripheral.__init__(self, mac_address, addrType=ADDR_TYPE_RANDOM)
@@ -293,7 +293,9 @@ class miband(Peripheral):
             try:
                 res = self.queue.get(False)
                 _type = res[0]
+                self._log.info("parse_queue {}".format(_type))
                 if self.heart_measure_callback and _type == QUEUE_TYPES.HEART:
+                    self.last_msg = time.clock_gettime(time.CLOCK_MONOTONIC)
                     current_hr=struct.unpack('bb', res[1])[1]
                     if self.last_hr!=current_hr:
                         self.heart_measure_callback(self, current_hr)
@@ -303,6 +305,9 @@ class miband(Peripheral):
                 elif self.accel_raw_callback and _type == QUEUE_TYPES.RAW_ACCEL:
                     self.accel_raw_callback(self._parse_raw_accel(res[1]))
             except Empty:
+                if ((self.last_msg>0) and (time.clock_gettime(time.CLOCK_MONOTONIC)-self.last_msg > 60)):
+                    self._log.info("xxxxxxxxxxxxx")
+                    self.disconnect()
                 break
 
     def send_custom_alert(self, type, phone, msg):
