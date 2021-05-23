@@ -16,8 +16,8 @@ from mysql.connector import connection
 from mysql.connector import errorcode
 
 FORMAT = '%(asctime)-15s %(name)s (%(levelname)s) > %(message)s'
-logging.basicConfig(filename='/var/log/hrm.log', format=FORMAT)
-#logging.basicConfig(format=FORMAT)
+#logging.basicConfig(filename='/var/log/hrm.log', format=FORMAT)
+logging.basicConfig(format=FORMAT)
 _log = logging.getLogger()
 _log.setLevel(logging.DEBUG)
 
@@ -64,6 +64,13 @@ configs = []
 configs.append(MiConfig(30,"C0:63:64:53:34:E2","0bf5d9aaf4e2413eb191dbd3fcb1ea2f"))
 configs.append(MiConfig(30,"F6:81:78:7B:4F:2C","e987f3ce65e443cbbb1a89b688e92699"))
 maxAllowedHr=100
+alarms_server_ip='193.176.229.2'
+alarms_server_port=5201
+abonado = 2323
+event = "*A"
+area = 1
+zone = 1
+event_line = 0
  
 def check_bt_restart():
   if ((time.clock_gettime(time.CLOCK_MONOTONIC)-db.last_restart) > 30):
@@ -79,8 +86,28 @@ def check_bt_restart():
       time.sleep(config.seconds)
 
 
+def signal (event, area, zone):
+  global event_line
+  event_line+=1
+  now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+  signal_template = '\x02<?xml ver_sion="1.0"?><Packet ID="%d" Line="%d"><Signal EvType="SYS" Event="%s"><Area>%d</Area><Zone>%d</Zone><Date>%s</Date></Signal></Packet>\x03' % (abonado, event_line, event,area,zone,now)
+  _log.debug('Sending {}'.format(signal_template))
+  return signal_template
+
 def send_alarm():
-  kk=0
+  sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+  server_address = (alarms_server_ip, alarms_server_port)
+  print('connecting to {} port {}'.format(*server_address))
+  sock.connect(server_address)
+
+  try:
+      sock.sendall(bytes(signal(event, area, zone), encoding="raw_unicode_escape"))
+
+  finally:
+      print('closing socket')
+      sock.close()
+
 
 def heart_logger(band, data):
     _log.debug('{} Realtime heart BPM: {}'.format(band.mac_address, data))
@@ -106,7 +133,6 @@ def main_process(config):
 
 
 if __name__ == "__main__":
-    for config in configs:
-      x = threading.Thread(target=main_process, args=(config,))
-      x.start()
-
+  for config in configs:
+    x = threading.Thread(target=main_process, args=(config,))
+    x.start()
