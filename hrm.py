@@ -16,8 +16,8 @@ from mysql.connector import connection
 from mysql.connector import errorcode
 
 FORMAT = '%(asctime)-15s %(name)s (%(levelname)s) > %(message)s'
-#logging.basicConfig(filename='/var/log/hrm.log', format=FORMAT)
-logging.basicConfig(format=FORMAT)
+logging.basicConfig(filename='/var/log/hrm.log', format=FORMAT)
+#logging.basicConfig(format=FORMAT)
 _log = logging.getLogger()
 _log.setLevel(logging.DEBUG)
 
