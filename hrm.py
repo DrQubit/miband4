@@ -7,6 +7,7 @@ import shutil
 import time
 import threading
 import mysql.connector
+import socket
 
 from datetime import datetime
 from bluepy.btle import BTLEDisconnectError
@@ -62,16 +63,8 @@ db = MiDb()
 configs = []
 configs.append(MiConfig(30,"C0:63:64:53:34:E2","0bf5d9aaf4e2413eb191dbd3fcb1ea2f"))
 configs.append(MiConfig(30,"F6:81:78:7B:4F:2C","e987f3ce65e443cbbb1a89b688e92699"))
-
+maxAllowedHr=100
  
-
-
-
-
-def heart_logger(band, data):
-    _log.debug ('{} Realtime heart BPM: {}'.format(band.mac_address, data))
-    db.log(band.mac_address, data)
-
 def check_bt_restart():
   if ((time.clock_gettime(time.CLOCK_MONOTONIC)-db.last_restart) > 30):
       _log.error(
@@ -85,7 +78,18 @@ def check_bt_restart():
           "************************ Waiting {} seconds ************************".format(config.seconds))
       time.sleep(config.seconds)
 
-def doit(config):
+
+def send_alarm():
+  kk=0
+
+def heart_logger(band, data):
+    _log.debug('{} Realtime heart BPM: {}'.format(band.mac_address, data))
+    db.log(band.mac_address, data)
+    if data > maxAllowedHr:
+      send_alarm()
+
+
+def main_process(config):
   while True:
     try:
       _log.debug('Initializing {}'.format(config.mac))
@@ -103,6 +107,6 @@ def doit(config):
 
 if __name__ == "__main__":
     for config in configs:
-      x = threading.Thread(target=doit, args=(config,))
+      x = threading.Thread(target=main_process, args=(config,))
       x.start()
 
