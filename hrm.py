@@ -13,6 +13,7 @@ import socket
 
 from datetime import datetime
 from bluepy.btle import BTLEDisconnectError
+from bluepy.btle import BTLEException
 from miband import miband
 from mysql.connector import connection
 from mysql.connector import errorcode
@@ -100,7 +101,7 @@ bt_initialized=False
 
 
 def check_bt_restart():
-    if (((time.monotonic()-db.last_restart) > 30) and (bt_initialized==False)):
+    if ((time.monotonic()-db.last_restart) > 30):
         _log.error(
             "************************ Restarting Bluetooth ************************")
         db.last_restart = time.monotonic()
@@ -161,8 +162,11 @@ def main_process(config):
             global bt_initialized
             bt_initialized = True
             band.start_heart_rate_realtime(heart_measure_callback=heart_logger)
-        except:
-            db.log_disconnect(config.mac, sys.exc_info())
+        except BTLEDisconnectError as e:
+            if (band):
+                db.log_disconnect(band.mac, e)
+            _log.error("Can't connect to band {}".format(config.mac))
+        except BTLEException as e:
             _log.error(
                 "************************ Exception ************************")
             _log.error(sys.exc_info())
