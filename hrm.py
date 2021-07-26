@@ -173,6 +173,11 @@ def main_process(config):
                 "************************ Exception ************************")
             _log.error(sys.exc_info())
             check_bt_restart()
+        _log.debug(
+            "************************ Waiting {} seconds ************************".format(config.seconds))
+        time.sleep(config.seconds)
+
+
 
 
 if __name__ == "__main__":
