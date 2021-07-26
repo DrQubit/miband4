@@ -85,9 +85,9 @@ class MiDb:
 
 db = MiDb()
 configs = []
-configs.append(MiConfig(30, "C0:63:64:53:34:E2",
+configs.append(MiConfig(10, "C0:63:64:53:34:E2",
                "0bf5d9aaf4e2413eb191dbd3fcb1ea2f"))
-configs.append(MiConfig(30, "F6:81:78:7B:4F:2C",
+configs.append(MiConfig(10, "F6:81:78:7B:4F:2C",
                "e987f3ce65e443cbbb1a89b688e92699"))
 maxAllowedHr = 100
 alarms_server_ip = '193.176.229.2'
@@ -100,6 +100,7 @@ bt_initialized=False
 
 
 def bt_restart():
+    _log.error("************************ Restarting Bluetooth ************************")
     os.system("sudo service bluetooth stop")
     os.system("sudo service bluetooth start")
     os.system("sudo systemctl stop bluetooth")
@@ -173,6 +174,8 @@ def main_process(config):
 
 
 if __name__ == "__main__":
+    time.sleep(30)
+    bt_restart()
     for config in configs:
         x = threading.Thread(target=main_process, args=(config,))
         x.start()
