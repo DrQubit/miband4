@@ -162,7 +162,7 @@ def main_process(config):
             bt_initialized = True
             band.start_heart_rate_realtime(heart_measure_callback=heart_logger)
         except:
-            db.log_disconnect(band.mac_address, sys.exc_info())
+            db.log_disconnect(config.mac, sys.exc_info())
             _log.error(
                 "************************ Exception ************************")
             _log.error(sys.exc_info())
