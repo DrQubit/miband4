@@ -36,15 +36,15 @@ class MiConfig:
 class MiDb:
     def __init__(self):
         self.last_restart = 0
-        self.insert_query = "INSERT INTO hr (mac, hr, record_timestamp) VALUES	(%s, %s,NOW());"
+        self.insert_query = "INSERT INTO hr_log (mac, hr, record_timestamp) VALUES	(%s, %s,NOW());"
         self.cnx = None
         self.connect()
 
     def connect(self):
         try:
-            self.cnx = connection.MySQLConnection(user='sql11407604', password='eEyKVLq6HM',
-                                                  host='sql11.freesqldatabase.com',
-                                                  database='sql11407604')
+            self.cnx = connection.MySQLConnection(user='securecor', password='securecor',
+                                                  host='localhost',
+                                                  database='securecor')
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 _log.error(
@@ -61,6 +61,24 @@ class MiDb:
             self.connect()
         sql_cursor = self.cnx.cursor()
         sql_cursor.execute(self.insert_query, (mac, data))
+        self.cnx.commit()
+        sql_cursor.close()
+
+    def log_connect(self, mac):
+        if (self.cnx == None):
+            self.connect()
+        sql_cursor = self.cnx.cursor()
+        sql_cursor.execute(
+            "INSERT INTO events (mac, event, record_timestamp) VALUES	(%s, 'CONNECT',NOW());", (mac))
+        self.cnx.commit()
+        sql_cursor.close()
+
+    def log_disconnect(self, mac,reason):
+        if (self.cnx == None):
+            self.connect()
+        sql_cursor = self.cnx.cursor()
+        sql_cursor.execute(
+            "INSERT INTO events (mac, event, message, record_timestamp) VALUES	(%s, 'DISCONNECT', %s, NOW());", (mac, reason))
         self.cnx.commit()
         sql_cursor.close()
 
@@ -139,10 +157,12 @@ def main_process(config):
             now = datetime.now()
             print('Set time to:', now)
             band.set_current_time(now)
-            band.start_heart_rate_realtime(heart_measure_callback=heart_logger)
+            db.log_connect(band.mac_address)
             global bt_initialized
-            bt_initialized=True
+            bt_initialized = True
+            band.start_heart_rate_realtime(heart_measure_callback=heart_logger)
         except:
+            db.log_disconnect(band.mac_address, sys.exc_info())
             _log.error(
                 "************************ Exception ************************")
             _log.error(sys.exc_info())
