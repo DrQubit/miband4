@@ -36,7 +36,6 @@ class MiConfig:
 
 class MiDb:
     def __init__(self):
-        self.last_restart = 0
         self.insert_query = "INSERT INTO hr_log (mac, hr, record_timestamp) VALUES	(%s, %s,NOW());"
         self.cnx = None
         self.connect()
@@ -100,18 +99,11 @@ event_line = 0
 bt_initialized=False
 
 
-def check_bt_restart():
-    if ((time.monotonic()-db.last_restart) > 30):
-        _log.error(
-            "************************ Restarting Bluetooth ************************")
-        db.last_restart = time.monotonic()
-        os.system("sudo service bluetooth stop")
-        os.system("sudo service bluetooth start")
-        os.system("sudo systemctl stop bluetooth")
-        os.system("sudo systemctl start bluetooth")
-        _log.error(
-            "************************ Waiting {} seconds ************************".format(config.seconds))
-        time.sleep(config.seconds)
+def bt_restart():
+    os.system("sudo service bluetooth stop")
+    os.system("sudo service bluetooth start")
+    os.system("sudo systemctl stop bluetooth")
+    os.system("sudo systemctl start bluetooth")
 
 
 def signal(event, area, zone):
@@ -172,7 +164,7 @@ def main_process(config):
             _log.error(
                 "************************ Exception ************************")
             _log.error(sys.exc_info())
-            check_bt_restart()
+            bt_restart()
         _log.debug(
             "************************ Waiting {} seconds ************************".format(config.seconds))
         time.sleep(config.seconds)
