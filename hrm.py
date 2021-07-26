@@ -4,8 +4,6 @@ import sys
 import os
 import time
 import logging
-import subprocess
-import shutil
 import time
 import threading
 import mysql.connector
@@ -18,9 +16,7 @@ from miband import miband
 from mysql.connector import connection
 from mysql.connector import errorcode
 
-FORMAT = '%(asctime)-15s %(name)s (%(levelname)s) > %(message)s'
-#logging.basicConfig(filename='/var/log/hrm.log', format=FORMAT)
-logging.basicConfig(format=FORMAT)
+logging.basicConfig(format='%(asctime)-15s %(name)s (%(levelname)s) > %(message)s')
 fileLog = logging.FileHandler('/var/log/hrm.log')
 _log = logging.getLogger()
 _log.setLevel(logging.DEBUG)
@@ -32,6 +28,20 @@ class MiConfig:
         self.seconds = seconds
         self.mac = mac
         self.key = bytes.fromhex(key)
+
+
+configs = []
+configs.append(MiConfig(10, "C0:63:64:53:34:E2", "0bf5d9aaf4e2413eb191dbd3fcb1ea2f"))
+configs.append(MiConfig(10, "F6:81:78:7B:4F:2C", "e987f3ce65e443cbbb1a89b688e92699"))
+maxAllowedHr = 100
+alarms_server_ip = '193.176.229.2'
+alarms_server_port = 5201
+abonado = 2323
+area = 1
+zone = 1
+event_line = 0
+
+
 
 
 class MiDb:
@@ -81,21 +91,8 @@ class MiDb:
         self.cnx.commit()
         sql_cursor.close()
 
-
 db = MiDb()
-configs = []
-configs.append(MiConfig(10, "C0:63:64:53:34:E2",
-               "0bf5d9aaf4e2413eb191dbd3fcb1ea2f"))
-configs.append(MiConfig(10, "F6:81:78:7B:4F:2C",
-               "e987f3ce65e443cbbb1a89b688e92699"))
-maxAllowedHr = 100
-alarms_server_ip = '193.176.229.2'
-alarms_server_port = 5201
-abonado = 2323
-area = 1
-zone = 1
-event_line = 0
-bt_initialized=False
+
 
 
 def bt_restart():
