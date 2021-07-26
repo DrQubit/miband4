@@ -42,7 +42,7 @@ class MiDb:
 
     def connect(self):
         try:
-            self.cnx = connection.MySQLConnection(user='securecor', password='securecor',
+            self.cnx = connection.MySQLConnection(user='securecor', password='c3eBt9!nHQ',
                                                   host='localhost',
                                                   database='securecor')
         except mysql.connector.Error as err:
