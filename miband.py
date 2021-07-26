@@ -160,6 +160,7 @@ class miband(Peripheral):
         self.timeout = timeout
         self.mac_address = mac_address
         self.state = None
+        self.last_alarm
         self.last_hr = -1
         self.heart_measure_callback = None
         self.heart_raw_callback = None
