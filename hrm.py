@@ -163,9 +163,11 @@ def main_process(config):
             bt_initialized = True
             band.start_heart_rate_realtime(heart_measure_callback=heart_logger)
         except BTLEDisconnectError as e:
-            if (band):
+            try:
                 db.log_disconnect(band.mac, e)
-            _log.error("Can't connect to band {}".format(config.mac))
+                _log.error("Disconnected from band {}".format(band.mac))
+            except Exception:
+                _log.error("Can't connect to band {}".format(config.mac))
         except BTLEException as e:
             _log.error(
                 "************************ Exception ************************")
