@@ -38,7 +38,6 @@ class MiDb:
     def __init__(self):
         self.insert_query = "INSERT INTO hr_log (mac, hr, record_timestamp) VALUES	(%s, %s,NOW());"
         self.cnx = None
-        self.connect()
 
     def connect(self):
         try:
@@ -175,6 +174,7 @@ def main_process(config):
 
 if __name__ == "__main__":
     time.sleep(30)
+    db.connect()
     bt_restart()
     for config in configs:
         x = threading.Thread(target=main_process, args=(config,))
